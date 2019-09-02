@@ -100,3 +100,66 @@ export const IssueList = styled.div`
     color: #999;
   }
 `;
+
+export const Buttons = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-self: center;
+  align-items: center;
+  max-width: 300px;
+  justify-content: space-between;
+  margin: 0 auto;
+
+  div {
+    width: 75px;
+    border-radius: 2px;
+    text-align: center;
+    border: 2px solid black;
+    color: #eee;
+    cursor: pointer;
+  }
+  .open {
+    background-color: green;
+    border-color: darkgreen;
+    cursor: ${props =>
+      props.selectedState === 'open' ? 'not-allowed' : 'pointer'};
+  }
+
+  .closed {
+    background-color: red;
+    border-color: darkred;
+    cursor: ${props =>
+      props.selectedState === 'closed' ? 'not-allowed' : 'pointer'};
+  }
+
+  .all {
+    background-color: blue;
+    border-color: darkblue;
+    cursor: ${props =>
+      props.selectedState === 'all' ? 'not-allowed' : 'pointer'};
+  }
+`;
+
+export const Paginator = styled.div`
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 5%;
+
+  div {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 115px;
+    height: 46px;
+    border-radius: 46px;
+    color: #eee;
+    background-color: #7159c1;
+    cursor: pointer;
+  }
+
+  div:first-child {
+    background-color: ${props => (!props.disabled ? '#7159c1' : 'grey')};
+    cursor: ${props => (props.disabled ? 'not-allowed' : 'pointer')};
+  }
+`;

@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import api from '../../services/api';
-import { Loading, Owner, IssueList } from './styles';
+import { Loading, Owner, IssueList, Buttons, Paginator } from './styles';
 
 import Container from '../../components/Container/index';
 
@@ -18,44 +18,53 @@ export default class Repository extends Component {
   state = {
     repository: {},
     issues: [],
+    searchState: 'open',
     loading: true,
+    page: 1,
   };
 
   async componentDidMount() {
     const { match } = this.props;
+    const { searchState } = this.state;
 
     const repoName = decodeURIComponent(match.params.repository);
-    if (!localStorage.getItem('repo')) {
-      const [repository, issues] = await Promise.all([
-        await api.get(`/repos/${repoName}`),
-        await api.get(`/repos/${repoName}/issues`, {
-          params: {
-            state: 'open',
-            per_page: 5,
-          },
-        }),
-      ]);
+    const [repository, issues] = await Promise.all([
+      await api.get(`/repos/${repoName}`),
+      await api.get(`/repos/${repoName}/issues`, {
+        params: {
+          state: searchState,
+          per_page: 5,
+        },
+      }),
+    ]);
 
-      localStorage.setItem('repo', JSON.stringify(repository.data));
-      localStorage.setItem('issues', JSON.stringify(issues.data));
-      this.setState({
-        repository: repository.data,
-        issues: issues.data,
-        loading: false,
+    this.setState({
+      repository: repository.data,
+      issues: issues.data,
+      loading: false,
+    });
+  }
+
+  async componentDidUpdate(_, prevState) {
+    const { searchState, page } = this.state;
+    if (prevState.searchState !== searchState || prevState.page !== page) {
+      const { match } = this.props;
+      const repoName = decodeURIComponent(match.params.repository);
+      const issues = await api.get(`/repos/${repoName}/issues`, {
+        params: {
+          state: searchState,
+          per_page: 5,
+          page,
+        },
       });
-    } else {
-      const repo = JSON.parse(localStorage.getItem('repo'));
-      const issues = JSON.parse(localStorage.getItem('issues'));
       this.setState({
-        repository: repo,
-        issues,
-        loading: false,
+        issues: issues.data,
       });
     }
   }
 
   render() {
-    const { repository, issues, loading } = this.state;
+    const { repository, issues, loading, searchState, page } = this.state;
 
     if (loading) {
       return <Loading>Carregando</Loading>;
@@ -68,6 +77,26 @@ export default class Repository extends Component {
           <h1>{repository.name}</h1>
           <p>{repository.description}</p>
         </Owner>
+        <Buttons selectedState={searchState}>
+          <div
+            className="open"
+            onClick={() => this.setState({ searchState: 'open' })}
+          >
+            OPEN
+          </div>
+          <div
+            className="closed"
+            onClick={() => this.setState({ searchState: 'closed' })}
+          >
+            CLOSED
+          </div>
+          <div
+            className="all"
+            onClick={() => this.setState({ searchState: 'all' })}
+          >
+            ALL
+          </div>
+        </Buttons>
         <IssueList>
           {issues.map(issue => (
             <li key={String(issue.id)}>
@@ -84,6 +113,18 @@ export default class Repository extends Component {
             </li>
           ))}
         </IssueList>
+        <Paginator disabled={page === 1}>
+          <div
+            onClick={() =>
+              page === 1 ? '' : this.setState({ page: page - 1 })
+            }
+          >
+            Página Anterior
+          </div>
+          <div onClick={() => this.setState({ page: page + 1 })}>
+            Próxima Página
+          </div>
+        </Paginator>
       </Container>
     );
   }

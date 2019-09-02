@@ -14,6 +14,7 @@ export default class Main extends Component {
     newRepo: '',
     repositories: [],
     loading: false,
+    error: false,
   };
 
   componentDidMount() {
@@ -33,36 +34,43 @@ export default class Main extends Component {
   }
 
   handleInputChange = e => {
-    this.setState({ newRepo: e.target.value });
+    this.setState({ newRepo: e.target.value, error: false });
   };
 
   handleSubmit = async e => {
-    e.preventDefault();
+    try {
+      e.preventDefault();
+      const { newRepo, repositories } = this.state;
 
-    const { newRepo, repositories } = this.state;
-    this.setState({ loading: true });
-    const response = await api.get(`/repos/${newRepo}`);
+      const hasRepo = repositories.find(r => r.name === newRepo);
+      if (hasRepo) throw 'Repositório duplicado';
 
-    const data = {
-      name: response.data.full_name,
-    };
+      this.setState({ loading: true });
+      const response = await api.get(`/repos/${newRepo}`);
 
-    this.setState({
-      repositories: [...repositories, data],
-      newRepo: '',
-      loading: false,
-    });
+      const data = {
+        name: response.data.full_name,
+      };
+
+      this.setState({
+        repositories: [...repositories, data],
+        newRepo: '',
+        loading: false,
+      });
+    } catch (error) {
+      this.setState({ error: true, loading: false });
+    }
   };
 
   render() {
-    const { newRepo, loading, repositories } = this.state;
+    const { newRepo, loading, repositories, error } = this.state;
     return (
       <Container>
         <h1>
           <FaGithubAlt />
           Repositórios
         </h1>
-        <Form onSubmit={this.handleSubmit}>
+        <Form onSubmit={this.handleSubmit} error={error}>
           <input
             type="text"
             placeholder="Adicionar repositório"
